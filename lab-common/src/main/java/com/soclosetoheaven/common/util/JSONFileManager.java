@@ -3,11 +3,13 @@ package com.soclosetoheaven.common.util;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
-import com.soclosetoheaven.common.businesslogic.model.Dragon;
+import com.soclosetoheaven.common.model.Dragon;
+import com.soclosetoheaven.common.exceptions.InvalidFieldValueException;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Deprecated
 public class JSONFileManager {
@@ -49,7 +51,7 @@ public class JSONFileManager {
         try(BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
             in.lines().forEach(this.fileData::append);
             ArrayList<Dragon> dragons = parser.parse(this.fileData.toString());
-            /*dragons.removeIf(dragon -> {
+            dragons.removeIf(dragon -> {
                 try {
                     Dragon.VALIDATOR.validate(dragon);
                 } catch (InvalidFieldValueException e) {
@@ -57,7 +59,7 @@ public class JSONFileManager {
                     return true;
                 }
                 return false;
-            });*/
+            });
             return dragons;
         } catch (IOException | JsonParseException e) {
             System.err.printf("%s: %s%n", e.getMessage(), "empty collection created" ); // restruct later
@@ -70,7 +72,7 @@ public class JSONFileManager {
      * @param collection that will be saved to file
      * @return true if successfully saved, false if else
      */
-    public boolean saveToFile(ArrayList<Dragon> collection) {
+    public boolean saveToFile(List<Dragon> collection) {
         try (FileOutputStream out = new FileOutputStream(file)) {
             out.write(writer.parse(collection).getBytes());
         } catch (IOException e) {
@@ -89,7 +91,7 @@ public class JSONFileManager {
          */
         private final Gson gson = new Gson();
 
-        public String parse(ArrayList<Dragon> collection) {
+        public String parse(List<Dragon> collection) {
             return gson.toJson(collection);
         }
     }

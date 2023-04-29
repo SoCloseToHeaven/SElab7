@@ -1,6 +1,7 @@
 package com.soclosetoheaven.common.net.messaging;
 
-import com.soclosetoheaven.common.businesslogic.model.Dragon;
+
+import com.soclosetoheaven.common.model.Dragon;
 
 import java.io.Serial;
 

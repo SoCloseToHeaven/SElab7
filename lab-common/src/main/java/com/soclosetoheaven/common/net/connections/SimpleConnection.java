@@ -20,7 +20,6 @@ public interface SimpleConnection<getT, sendT> {
     default byte[][] transformDataToPackages(Serializable obj) {
         byte[] data = SerializationUtils.serialize(obj);
         byte[][] packets = new byte[(int) Math.ceil(data.length / (double) BUFFER_SIZE)][BUFFER_SIZE];
-        //byte[][] packets = new byte[(int) Math.ceil(data.length / (double) MAX_PACKET_SIZE)][MAX_PACKET_SIZE];
 
         int currentPosition = 0;
         for (int i = 0; i < packets.length; ++i) {

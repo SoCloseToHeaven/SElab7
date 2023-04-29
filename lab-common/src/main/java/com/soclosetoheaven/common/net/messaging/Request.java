@@ -1,5 +1,7 @@
 package com.soclosetoheaven.common.net.messaging;
 
+import com.soclosetoheaven.common.net.auth.AuthCredentials;
+
 import java.io.Serial;
 import java.io.Serializable;
 
@@ -17,11 +19,19 @@ public class Request implements Serializable {
         this.requestBody = requestBody;
     }
 
-    public RequestBody getBody() {
+    public RequestBody getRequestBody() {
         return requestBody;
     }
 
     public String getCommandName() {
         return commandName;
+    }
+
+    public void setAuthCredentials(AuthCredentials auth) {
+        this.requestBody.setAuthCredentials(auth);
+    }
+
+    public AuthCredentials getAuthCredentials() {
+        return this.requestBody.getAuthCredentials();
     }
 }

@@ -23,7 +23,7 @@ public class ClientCommandManager implements CommandManager<Request, String> {
     }
 
     @Override
-    public Request manage(String t) {
+    public Request manage(String t) throws UnknownCommandException{
         String[] args = t.trim().split("\\s+");
         String commandName = args[0].toLowerCase();
         int commandArgumentsStartPosition = 1;
@@ -50,19 +50,21 @@ public class ClientCommandManager implements CommandManager<Request, String> {
     public static ClientCommandManager defaultManager(BasicIO io) {
         ClientCommandManager cm = new ClientCommandManager(); // add commands later
         Arrays.asList(
+                new LoginCommand(null, io),
+                new RegisterCommand(null, io),
                 new InfoCommand(null),
-                new AddCommand(null, io),
+                new AddCommand(null, io, null),
                 new SortCommand(null),
-                new RemoveAllByAgeCommand(null),
+                new RemoveAllByAgeCommand(null, null),
                 new ShowCommand(null),
                 new ShowCommand(null),
                 new CountLessThanAgeCommand(null),
-                new ClearCommand(null),
-                new RemoveByIDCommand(null),
-                new RemoveAtCommand(null),
-                new HelpCommand(cm, io),
+                new ClearCommand(null, null),
+                new RemoveByIDCommand(null, null),
+                new RemoveAtCommand(null, null),
+                new HelpCommand(null),
                 new GroupCountingByCreationDateCommand(null),
-                new UpdateCommand(null, io),
+                new UpdateCommand(null, io, null),
                 new ExitCommand(io),
                 new ExecuteScriptCommand(io),
                 new HistoryCommand(cm, io)

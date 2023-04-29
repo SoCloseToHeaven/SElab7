@@ -1,32 +1,44 @@
 package com.soclosetoheaven.common.command;
 
-import com.soclosetoheaven.common.collectionmanagers.FileCollectionManager;
+import com.soclosetoheaven.common.exceptions.InvalidAccessException;
+import com.soclosetoheaven.common.model.Dragon;
+import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
 import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
 import com.soclosetoheaven.common.exceptions.InvalidRequestException;
-import com.soclosetoheaven.common.net.factorн.ResponseFactory;
+import com.soclosetoheaven.common.net.auth.User;
+import com.soclosetoheaven.common.net.auth.UserManager;
+import com.soclosetoheaven.common.net.factory.ResponseFactory;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
 import com.soclosetoheaven.common.net.messaging.Response;
 
 public class RemoveAtCommand extends AbstractCommand {
 
-    private final FileCollectionManager cm;
-    public RemoveAtCommand(FileCollectionManager cm) {
+    private final DragonCollectionManager cm;
+
+    private final UserManager um;
+    public RemoveAtCommand(DragonCollectionManager cm, UserManager um) {
         super("remove_at");
         this.cm = cm;
+        this.um = um;
     }
 
     @Override
-    public Response execute(RequestBody requestBody) {
-        int index = Integer.parseInt(requestBody.getArgs()[0]);
-        try {
-            cm.getCollection().remove(index);
-            return new Response("Successfully removed element with index: %s".formatted(index));
-        } catch (IndexOutOfBoundsException e) {
-            return ResponseFactory.createResponseWithException(
-                    new InvalidRequestException(e.getMessage())
-            );
-        }
+    public Response execute(RequestBody requestBody) throws InvalidRequestException{
+        String[] args = requestBody.getArgs();
+        if (args.length < 1 || !args[0].chars().allMatch(Character::isDigit))
+            throw new InvalidRequestException();
+
+        User user = um.getUserByAuthCredentials(requestBody.getAuthCredentials());
+        int index = Integer.parseInt(args[0]);
+        Dragon dragon = cm.get(index);
+        if (dragon == null)
+            throw new InvalidRequestException("No such element!");
+        if (!user.isAdmin() || dragon.getCreatorId() != user.getID())
+            throw new InvalidAccessException();
+        if (cm.remove(index) == null)
+            throw new InvalidRequestException("Unsuccessfully!");
+        return ResponseFactory.createResponseWithDragon("Deleted", dragon);
     }
 
     @Override

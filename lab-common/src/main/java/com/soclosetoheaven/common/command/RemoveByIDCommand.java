@@ -1,9 +1,12 @@
 package com.soclosetoheaven.common.command;
 
-import com.soclosetoheaven.common.collectionmanagers.FileCollectionManager;
+import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
+import com.soclosetoheaven.common.exceptions.InvalidAccessException;
 import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
 import com.soclosetoheaven.common.exceptions.InvalidRequestException;
-import com.soclosetoheaven.common.net.factorн.ResponseFactory;
+import com.soclosetoheaven.common.net.auth.User;
+import com.soclosetoheaven.common.net.auth.UserManager;
+import com.soclosetoheaven.common.net.factory.ResponseFactory;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
 import com.soclosetoheaven.common.net.messaging.Response;
@@ -11,23 +14,27 @@ import com.soclosetoheaven.common.net.messaging.Response;
 
 public class RemoveByIDCommand extends AbstractCommand{
 
-    private final FileCollectionManager cm;
-    public RemoveByIDCommand(FileCollectionManager cm) {
+    private final DragonCollectionManager cm;
+
+    private final UserManager um;
+    public RemoveByIDCommand(DragonCollectionManager cm, UserManager um) {
         super("remove_by_id");
         this.cm = cm;
+        this.um = um;
     }
 
     @Override
-    public Response execute(RequestBody requestBody) {
-        int id = Integer.parseInt(requestBody.getArgs()[0]);
-        if (cm.getCollection().removeIf(elem -> elem.getId() == id)) {
-            return ResponseFactory.createResponse(
-                    "Successfully removed element with ID: %s".formatted(id)
-            );
-        }
-        return ResponseFactory.createResponseWithException(
-                new InvalidRequestException("No elements found with ID: %s".formatted(id))
-        );
+    public Response execute(RequestBody requestBody) throws InvalidRequestException{
+        String[] args = requestBody.getArgs();
+        if (args.length < 1 || !args[0].chars().allMatch(Character::isDigit))
+            throw new InvalidRequestException();
+        User user = um.getUserByAuthCredentials(requestBody.getAuthCredentials());
+        int id = Integer.parseInt(args[0]);
+        if (!user.isAdmin() || cm.getByID(id).getCreatorId() != user.getID())
+            throw new InvalidAccessException();
+        if (!cm.removeByID(id))
+            throw new InvalidRequestException("Unsuccessfully!");
+        return ResponseFactory.createResponse("Successfully deleted!");
     }
 
     @Override

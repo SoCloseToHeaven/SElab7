@@ -3,7 +3,7 @@ package com.soclosetoheaven.common.exceptions;
 /**
  * Used when command manager can't find command
  */
-public class UnknownCommandException extends RuntimeException{
+public class UnknownCommandException extends Exception{
 
     /**
      * @param name command's name

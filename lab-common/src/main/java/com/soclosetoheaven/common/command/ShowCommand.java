@@ -1,18 +1,18 @@
 package com.soclosetoheaven.common.command;
 
-import com.soclosetoheaven.common.businesslogic.model.Dragon;
-import com.soclosetoheaven.common.collectionmanagers.FileCollectionManager;
-import com.soclosetoheaven.common.net.factorн.ResponseFactory;
+import com.soclosetoheaven.common.model.Dragon;
+import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
+import com.soclosetoheaven.common.net.factory.ResponseFactory;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
 import com.soclosetoheaven.common.net.messaging.Response;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class ShowCommand extends AbstractCommand{
 
-    private final FileCollectionManager cm;
-    public ShowCommand(FileCollectionManager cm) {
+    private final DragonCollectionManager cm;
+    public ShowCommand(DragonCollectionManager cm) {
         super("show");
         this.cm = cm;
     }
@@ -20,7 +20,7 @@ public class ShowCommand extends AbstractCommand{
 
     @Override
     public Response execute(RequestBody requestBody) {
-        ArrayList<Dragon> collection = cm.getCollection();
+        List<Dragon> collection = cm.getCollection();
         if (collection.size() == 0) {
             return new Response("No elements found in collection");
         }

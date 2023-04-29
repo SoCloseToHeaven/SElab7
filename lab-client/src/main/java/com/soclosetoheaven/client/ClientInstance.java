@@ -6,7 +6,8 @@ import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
 import com.soclosetoheaven.common.exceptions.UnknownCommandException;
 import com.soclosetoheaven.common.io.BasicIO;
 
-import com.soclosetoheaven.common.net.connections.UDPClientConnection;
+import com.soclosetoheaven.client.net.connection.UDPClientConnection;
+import com.soclosetoheaven.common.net.auth.AuthCredentials;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.Response;
 import com.soclosetoheaven.common.util.TerminalColors;
@@ -23,7 +24,10 @@ public class ClientInstance {
 
     private UDPClientConnection connection;
 
+
     private final ClientCommandManager commandManager;
+
+    private AuthCredentials authCredentials;
 
 
     /**
@@ -48,12 +52,20 @@ public class ClientInstance {
             io.writeErr("No option to continue work of client application!");
             System.exit(-29);
         }
+        io.writeln(TerminalColors.setColor(
+                "Welcome to client-app, please, login or register, or see possible command by typing 'help'",
+                TerminalColors.GREEN)
+        );
         String input;
         while ((input = io.read(INPUT_PREFIX)) != null) {
             try {
                 Request request = commandManager.manage(input);
                 if (request == null)
                     continue;
+                if (request.getAuthCredentials() == null)
+                    request.setAuthCredentials(this.authCredentials);
+                else
+                    this.authCredentials = request.getAuthCredentials();
                 connection.sendData(request);
                 Response response = connection.waitAndGetData();
                 io.writeln(

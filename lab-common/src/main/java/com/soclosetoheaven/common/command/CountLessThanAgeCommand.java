@@ -1,8 +1,10 @@
 package com.soclosetoheaven.common.command;
 
-import com.soclosetoheaven.common.collectionmanagers.FileCollectionManager;
+import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
 import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
-import com.soclosetoheaven.common.net.factorн.ResponseFactory;
+import com.soclosetoheaven.common.exceptions.InvalidFieldValueException;
+import com.soclosetoheaven.common.exceptions.InvalidRequestException;
+import com.soclosetoheaven.common.net.factory.ResponseFactory;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
 import com.soclosetoheaven.common.net.messaging.Response;
@@ -10,15 +12,18 @@ import com.soclosetoheaven.common.net.messaging.Response;
 
 public class CountLessThanAgeCommand extends AbstractCommand {
 
-    private final FileCollectionManager cm;
-    public CountLessThanAgeCommand(FileCollectionManager cm) {
+    private final DragonCollectionManager cm;
+    public CountLessThanAgeCommand(DragonCollectionManager cm) {
         super("count_less_than_age");
         this.cm = cm;
     }
 
 
     @Override
-    public Response execute(RequestBody requestBody) {
+    public Response execute(RequestBody requestBody)  throws InvalidRequestException {
+        String[] args = requestBody.getArgs();
+        if (args.length < 1 || !args[0].chars().allMatch(Character::isDigit))
+            throw new InvalidRequestException();
         Long age = Long.parseLong(requestBody.getArgs()[0]);
         Long count = cm.getCollection().stream().filter(elem -> elem.getAge() < age).count();
         return ResponseFactory.createResponse("%s - %s: %s"

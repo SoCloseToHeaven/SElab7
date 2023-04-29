@@ -11,6 +11,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.HashSet;
 
 public class ExecuteScriptCommand extends AbstractCommand{
@@ -32,20 +35,21 @@ public class ExecuteScriptCommand extends AbstractCommand{
     public Request toRequest(String[] args) {
         if (args.length < 1)
             throw new InvalidCommandArgumentException();
-        File file = new File(args[0]);
-        if (OPENED_FILES.contains(file))
+        Path file = Path.of(args[0]);
+        if (OPENED_FILES.contains(file.toFile()))
             throw new ExecutingScriptException("Recursion alert, script execution canceled");
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(file)) {
+            BufferedReader reader = new BufferedReader(new FileReader(URLDecoder.decode(args[0], StandardCharsets.UTF_8))) {
                 @Override
                 public void close() throws IOException {
                     super.close();
-                    ExecuteScriptCommand.OPENED_FILES.remove(file);
+                    ExecuteScriptCommand.OPENED_FILES.remove(file.toFile());
                 }
             };
-            OPENED_FILES.add(file);
+            OPENED_FILES.add(file.toFile());
             io.add(reader);
         } catch (IOException e) {
+            e.printStackTrace();
             throw new ExecutingScriptException(e.getMessage());
         }
         //this command doesn't send anything to server

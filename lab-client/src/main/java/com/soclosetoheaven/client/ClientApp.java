@@ -18,6 +18,8 @@ public class ClientApp {
      * @param args command-string arguments
      */
     public static void main(String[] args){
+        if (System.console() == null)
+            System.exit(30);
         ClientInstance client = new ClientInstance();
         client.run();
     }

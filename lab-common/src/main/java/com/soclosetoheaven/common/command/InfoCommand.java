@@ -1,14 +1,14 @@
 package com.soclosetoheaven.common.command;
 
-import com.soclosetoheaven.common.collectionmanagers.FileCollectionManager;
+import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
 import com.soclosetoheaven.common.net.messaging.Response;
 
 public class InfoCommand extends AbstractCommand{
 
-    private final FileCollectionManager cm;
-    public InfoCommand(FileCollectionManager cm) {
+    private final DragonCollectionManager cm;
+    public InfoCommand(DragonCollectionManager cm) {
         super("info");
         this.cm = cm;
     }

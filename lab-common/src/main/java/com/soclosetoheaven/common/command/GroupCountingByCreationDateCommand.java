@@ -1,21 +1,21 @@
 package com.soclosetoheaven.common.command;
 
-import com.soclosetoheaven.common.businesslogic.model.Dragon;
-import com.soclosetoheaven.common.collectionmanagers.FileCollectionManager;
-import com.soclosetoheaven.common.net.factorн.ResponseFactory;
+import com.soclosetoheaven.common.model.Dragon;
+import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
+import com.soclosetoheaven.common.net.factory.ResponseFactory;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
 import com.soclosetoheaven.common.net.messaging.Response;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 public class GroupCountingByCreationDateCommand extends AbstractCommand{
 
-    private final FileCollectionManager cm;
+    private final DragonCollectionManager cm;
 
-    public GroupCountingByCreationDateCommand(FileCollectionManager cm) {
+    public GroupCountingByCreationDateCommand(DragonCollectionManager cm) {
         super("group_counting_by_creation_date");
         this.cm = cm;
     }
@@ -23,9 +23,9 @@ public class GroupCountingByCreationDateCommand extends AbstractCommand{
     @Override
     public Response execute(RequestBody requestBody) {
         HashMap<Date, Integer> groups = new HashMap<>();
-        ArrayList<Dragon> collection = cm.getCollection();
+        List<Dragon> collection = cm.getCollection();
         for (Dragon dragon : collection) {
-            Date date = dragon.getDate();
+            Date date = dragon.getCreationDate();
             if (!groups.containsKey(date))
                 groups.put(date, 0);
             groups.replace(date, groups.get(date) + 1);
