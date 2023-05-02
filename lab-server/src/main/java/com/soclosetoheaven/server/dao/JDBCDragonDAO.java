@@ -4,36 +4,55 @@ import com.soclosetoheaven.common.model.Coordinates;
 import com.soclosetoheaven.common.model.Dragon;
 import com.soclosetoheaven.common.model.DragonCave;
 import com.soclosetoheaven.common.model.DragonType;
+import com.soclosetoheaven.server.ServerApp;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 public class JDBCDragonDAO extends SQLDragonDAO {
 
+
+    public static final int NAME_INDEX = 1;
+    public static final int COORDINATE_X_INDEX = 2;
+    public static final int COORDINATE_Y_INDEX = 3;
+    public static final int DATE_INDEX = 4;
+    public static final int AGE_INDEX = 5;
+    public static final int DESCRIPTION_INDEX = 6;
+    public static final int WINGSPAN_INDEX = 7;
+    public static final int TYPE_INDEX = 8;
+    public static final int DEPTH_INDEX = 9;
+    public static final int TREASURES_INDEX = 10;
+    public static final int CREATOR_ID_INDEX = 11;
 
     public JDBCDragonDAO(Connection connection) {
         super(connection);
     }
 
     @Override
-    public int create(Dragon dragon) throws SQLException{
-        PreparedStatement statement = connection.prepareStatement(Query.CREATE.query, Statement.RETURN_GENERATED_KEYS);
-        statement.setString(1, dragon.getName());
-        statement.setInt(2, dragon.getCoordinates().getX());
-        statement.setDouble(3, dragon.getCoordinates().getY());
-        statement.setDate(4, new Date(dragon.getCreationDate().getTime()));
-        statement.setLong(5, dragon.getAge());
-        statement.setString(6, dragon.getDescription());
-        statement.setInt(7, dragon.getWingspan());
-        statement.setString(8, dragon.getType().toString());
-        statement.setLong(9, dragon.getCave().getDepth());
-        statement.setInt(10, dragon.getCave().getNumberOfTreasures());
-        statement.setInt(11, dragon.getCreatorId());
-        statement.executeUpdate();
-        ResultSet set = statement.getGeneratedKeys();
-        set.next();
-        return set.getInt("id");
+    public int create(Dragon dragon){
+        try (PreparedStatement statement = connection.prepareStatement(Query.CREATE.query)) {
+            statement.setString(NAME_INDEX, dragon.getName());
+            statement.setInt(COORDINATE_X_INDEX, dragon.getCoordinates().getX());
+            statement.setDouble(COORDINATE_Y_INDEX, dragon.getCoordinates().getY());
+            statement.setDate(DATE_INDEX, new Date(dragon.getCreationDate().getTime()));
+            statement.setLong(AGE_INDEX, dragon.getAge());
+            statement.setString(DESCRIPTION_INDEX, dragon.getDescription());
+            statement.setInt(WINGSPAN_INDEX, dragon.getWingspan());
+            statement.setString(TYPE_INDEX, dragon.getType().toString());
+            statement.setLong(DEPTH_INDEX, dragon.getCave().getDepth());
+            statement.setInt(TREASURES_INDEX, dragon.getCave().getNumberOfTreasures());
+            statement.setInt(CREATOR_ID_INDEX, dragon.getCreatorId());
+            ResultSet set = statement.executeQuery();
+            set.next();
+            int id = set.getInt("id");
+            set.close();
+            return id;
+        } catch (SQLException e) {
+            ServerApp.log(Level.SEVERE, e.getMessage());
+            return ERROR_CODE;
+        }
     }
 
     @Override
@@ -58,39 +77,64 @@ public class JDBCDragonDAO extends SQLDragonDAO {
     }
 
     @Override
-    public void update(Dragon dragon) throws SQLException{
-            PreparedStatement statement = connection.prepareStatement(Query.UPDATE.query);
-            statement.setString(1, dragon.getName());
-            statement.setInt(2, dragon.getCoordinates().getX());
-            statement.setDouble(3, dragon.getCoordinates().getY());
-            statement.setDate(4, new Date(dragon.getCreationDate().getTime()));
-            statement.setLong(5, dragon.getAge());
-            statement.setString(6, dragon.getDescription());
-            statement.setInt(7, dragon.getWingspan());
-            statement.setString(8, dragon.getType().toString());
-            statement.setLong(9, dragon.getCave().getDepth());
-            statement.setInt(10, dragon.getCave().getNumberOfTreasures());
-            statement.setInt(11, dragon.getCreatorId());
-            statement.setLong(12, dragon.getID());
-            statement.execute();
+    public int update(Dragon dragon) {
+            final int idIndex = 11;
+            try (PreparedStatement statement = connection.prepareStatement(Query.UPDATE.query)) {
+                statement.setString(NAME_INDEX, dragon.getName());
+                statement.setInt(COORDINATE_X_INDEX, dragon.getCoordinates().getX());
+                statement.setDouble(COORDINATE_Y_INDEX, dragon.getCoordinates().getY());
+                statement.setDate(DATE_INDEX, new Date(dragon.getCreationDate().getTime()));
+                statement.setLong(AGE_INDEX, dragon.getAge());
+                statement.setString(DESCRIPTION_INDEX, dragon.getDescription());
+                statement.setInt(WINGSPAN_INDEX, dragon.getWingspan());
+                statement.setString(TYPE_INDEX, dragon.getType().toString());
+                statement.setLong(DEPTH_INDEX, dragon.getCave().getDepth());
+                statement.setInt(TREASURES_INDEX, dragon.getCave().getNumberOfTreasures());
+                statement.setLong(idIndex, dragon.getID());
+                return statement.executeUpdate();
+            } catch (SQLException e) {
+                ServerApp.log(Level.SEVERE, e.getMessage());
+                return ERROR_CODE;
+            }
     }
     @Override
-    public void delete(Dragon dragon) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement(Query.DELETE.query);
-        statement.setLong(1, dragon.getID());
-        statement.execute();
+    public int delete(Dragon dragon) {
+        final int idIndex = 1;
+        try (PreparedStatement statement = connection.prepareStatement(Query.DELETE.query)) {
+            statement.setLong(idIndex, dragon.getID());
+            return statement.executeUpdate();
+        } catch (SQLException e) {
+            ServerApp.log(Level.SEVERE, e.getMessage());
+            return ERROR_CODE;
+        }
     }
 
+    @Override
+    public int delete(List<Dragon> list) {
+        final int idArrayIndex = 1;
+        Integer[] ids = list
+                .stream()
+                .map(Dragon::getID)
+                .toArray(Integer[]::new);
+        try (PreparedStatement statement = connection.prepareStatement(Query.DELETE_MULTIPLE.query)) {
+            Array array = connection.createArrayOf("integer", ids);
+            statement.setArray(idArrayIndex, array);
+            return statement.executeUpdate();
+        } catch (SQLException e) {
+            ServerApp.log(Level.SEVERE, e.getMessage());
+            return ERROR_CODE;
+        }
+    }
 
     private enum Query {
 
         CREATE("INSERT INTO DRAGONS" +
                 "(name, coordinate_x, coordinate_y, creation_date, age, description, wingspan, type, cave_depth," +
                 "cave_number_of_treasures, creator_id) " +
-                "VALUES (?,?,?,?,?,?,?,?,?,?,?)"), // потом добавить ещё один вопросительный знак для id создателя
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?) RETURNING id"),
         READ_ALL("SELECT * FROM DRAGONS"),
 
-        UPDATE("UPDATE DRAGONS SET %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s WHERE %s" // добавить потом ещё вопросительный знак
+        UPDATE("UPDATE DRAGONS SET %s,%s,%s,%s,%s,%s,%s,%s,%s,%s WHERE %s"
                 .formatted("name = ?",
                         "coordinate_x = ?",
                         "coordinate_y = ?",
@@ -101,13 +145,13 @@ public class JDBCDragonDAO extends SQLDragonDAO {
                         "type = ?",
                         "cave_depth = ?",
                         "cave_number_of_treasures = ?",
-                        "creator_id = ?",
-                        "id = ?"
+                        "id in (?)"
                         )
         ),
-        DELETE("DELETE FROM DRAGONS WHERE id in (?)");
+        DELETE("DELETE FROM DRAGONS WHERE id in (?)"),
+        DELETE_MULTIPLE("DELETE FROM DRAGONS WHERE id = ANY (?)");
 
-        private final String query;
+        final String query;
 
         Query(String query) {
             this.query = query;

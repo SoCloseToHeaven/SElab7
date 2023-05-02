@@ -1,25 +1,30 @@
 package com.soclosetoheaven.common.command;
 
 import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
 import com.soclosetoheaven.common.net.messaging.Response;
 
 public class InfoCommand extends AbstractCommand{
 
-    private final DragonCollectionManager cm;
-    public InfoCommand(DragonCollectionManager cm) {
+    private final DragonCollectionManager collectionManager;
+    public InfoCommand(DragonCollectionManager collectionManager) {
         super("info");
-        this.cm = cm;
+        this.collectionManager = collectionManager;
+    }
+
+    public InfoCommand() {
+        this(null);
     }
 
     @Override
     public Response execute(RequestBody requestBody) {
-        return new Response(cm.toString());
+        return new Response(collectionManager.toString());
     }
 
     @Override
-    public Request toRequest(String[] args) {
+    public Request toRequest(String[] args) throws ManagingException {
         return super.toRequest(null);
     }
 

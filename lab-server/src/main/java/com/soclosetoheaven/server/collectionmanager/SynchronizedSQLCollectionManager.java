@@ -11,12 +11,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class SynchronizedSQLCollectionManager implements DragonCollectionManager {
 
-    private final List<Dragon> collection; // cache
+    private final List<Dragon> collection;
 
 
     private final ReadWriteLock lock;
 
-    private final SQLDragonDAO dao; // data access object
+    private final SQLDragonDAO dao;
 
     public SynchronizedSQLCollectionManager(SQLDragonDAO dao) throws SQLException {
         this.lock = new ReentrantReadWriteLock();
@@ -28,49 +28,34 @@ public class SynchronizedSQLCollectionManager implements DragonCollectionManager
     public List<Dragon> getCollection() {
         lock.readLock().lock();
         try {
-            return new ArrayList<>(collection); // чтобы никто не сделал каких-то приколов с коллекцией вне менеджера
+            return new ArrayList<>(collection);
         } finally {
             lock.readLock().unlock();
         }
     }
-    @Deprecated
-    @Override
-    public void setCollection(List<Dragon> collection) {
-        lock.writeLock().lock();
-        this.collection.clear();
-        this.collection.addAll(collection);
-        lock.writeLock().unlock();
-    }
 
     @Override
     public boolean add(Dragon dragon) {
+        int returnedValue;
+        boolean flag = false;
         lock.writeLock().lock();
-        try {
-            int id = dao.create(dragon);
-            dragon.setID(id);
-            return collection.add(dragon);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-          lock.writeLock().unlock();
+        if ((returnedValue = dao.create(dragon)) != SQLDragonDAO.ERROR_CODE) {
+            dragon.setID(returnedValue);
+            collection.add(dragon);
+            flag = true;
         }
+        lock.writeLock().unlock();
+        return flag;
     }
 
     @Override
     public Dragon remove(int index) {
+        Dragon dragon = null;
         lock.writeLock().lock();
-        if (collection.size() < index)
-            return null;
-        try {
-            Dragon dragon = collection.get(index);
-            dao.delete(dragon);
-            return collection.remove(index);
-        } catch (SQLException e) {
-            return null;
-        } finally {
-            lock.writeLock().unlock();
-        }
+        if (index < collection.size() && dao.delete((dragon = collection.get(index))) != SQLDragonDAO.ERROR_CODE)
+            collection.remove(index);
+        lock.writeLock().unlock();
+        return dragon;
     }
 
     @Override
@@ -84,10 +69,15 @@ public class SynchronizedSQLCollectionManager implements DragonCollectionManager
     }
 
     @Override
-    public void clear() {
+    public boolean clear() {
+        boolean flag = false;
         lock.writeLock().lock();
-        this.collection.clear(); // надо чёт тут придумать
+        if (dao.delete(collection) != SQLDragonDAO.ERROR_CODE) {
+            collection.clear();
+            flag = true;
+        }
         lock.writeLock().unlock();
+        return flag;
     }
 
     @Override
@@ -99,48 +89,37 @@ public class SynchronizedSQLCollectionManager implements DragonCollectionManager
 
     @Override
     public boolean removeByID(int id) {
+        boolean flag = false;
         lock.writeLock().lock();
         Dragon dragon = collection
                 .stream()
                 .filter(elem -> elem.getID() == id)
                 .findFirst()
                 .orElse(null);
-        if (dragon == null)
-            return false;
-        try {
-            dao.delete(dragon);
+        if (dragon != null && dao.delete(dragon) != SQLDragonDAO.ERROR_CODE) {
             collection.remove(dragon);
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            lock.writeLock().unlock();
+            flag = true;
         }
+        lock.writeLock().unlock();
+        return flag;
     }
 
     @Override
     public boolean update(Dragon dragon, int id) {
+        boolean flag = false;
         lock.writeLock().lock();
         Dragon element = collection
                 .stream()
                 .filter(elem -> elem.getID() == id)
                 .findFirst()
                 .orElse(null);
-        if (element == null)
-            return false;
-        try {
-            dragon.setID(id);
-            dao.update(dragon);
+        if (element != null && dao.update(dragon.setID(element.getID())) != SQLDragonDAO.ERROR_CODE) {
             collection.remove(element);
             collection.add(dragon);
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            lock.writeLock().unlock();
+            flag = true;
         }
+        lock.writeLock().unlock();
+        return flag;
     }
 
 
@@ -158,23 +137,18 @@ public class SynchronizedSQLCollectionManager implements DragonCollectionManager
 
     @Override
     public boolean removeAllByAge(long age) {
+        boolean flag = false;
         lock.writeLock().lock();
-        try {
-            List<Dragon> dragons = collection
-                    .stream()
-                    .filter(elem -> elem.getAge() == age)
-                    .toList();
-            for (var dragon: dragons) {
-                dao.delete(dragon); // переделать под транзакции
-                collection.remove(dragon);
-            }
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        } finally {
-            lock.writeLock().unlock();
+        List<Dragon> dragons = collection
+                .stream()
+                .filter(dragon -> dragon.getAge() == age)
+                .toList();
+        if (dao.delete(dragons) != SQLDragonDAO.ERROR_CODE) {
+            collection.removeAll(dragons);
+            flag = true;
         }
+        lock.writeLock().unlock();
+        return flag;
     }
 
     @Override

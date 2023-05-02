@@ -4,6 +4,7 @@ import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
 import com.soclosetoheaven.common.exceptions.InvalidAccessException;
 import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
 import com.soclosetoheaven.common.exceptions.InvalidRequestException;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.io.BasicIO;
 import com.soclosetoheaven.common.model.Dragon;
 import com.soclosetoheaven.common.net.auth.User;
@@ -15,17 +16,25 @@ import com.soclosetoheaven.common.net.messaging.*;
 
 public class UpdateCommand extends AbstractCommand{
 
-    private final DragonCollectionManager cm;
+    private final DragonCollectionManager collectionManager;
 
     private final BasicIO io;
 
-    private final UserManager um;
+    private final UserManager userManager;
 
-    public UpdateCommand(DragonCollectionManager cm, BasicIO io, UserManager um) {
+    public UpdateCommand(DragonCollectionManager collectionManager, BasicIO io, UserManager userManager) {
         super("update");
-        this.cm = cm;
+        this.collectionManager = collectionManager;
         this.io = io;
-        this.um = um;
+        this.userManager = userManager;
+    }
+
+    public UpdateCommand(DragonCollectionManager collectionManager, UserManager userManager) {
+        this(collectionManager, null, userManager);
+    }
+
+    public UpdateCommand(BasicIO io) {
+        this(null, io, null);
     }
 
     @Override
@@ -33,27 +42,27 @@ public class UpdateCommand extends AbstractCommand{
         String[] args = requestBody.getArgs();
         if (
                 !(requestBody instanceof RequestBodyWithDragon) ||
-                args.length < 1 ||
-                !args[0].chars().allMatch(Character::isDigit)
+                args.length < MIN_ARGS_SIZE ||
+                !args[FIRST_ARG].chars().allMatch(Character::isDigit)
         )
            throw new InvalidRequestException("Unable to update element");
 
-        int id = Integer.parseInt(args[0]);
+        int id = Integer.parseInt(args[FIRST_ARG]);
 
-        Dragon dragon = cm.getByID(id);
+        Dragon dragon = collectionManager.getByID(id);
         if (dragon == null)
             throw new InvalidRequestException("No dragon with such ID");
-        User user = um.getUserByAuthCredentials(requestBody.getAuthCredentials());
+        User user = userManager.getUserByAuthCredentials(requestBody.getAuthCredentials());
         if (!user.isAdmin() && dragon.getCreatorId() != user.getID())
             throw new InvalidAccessException();
-        if (!cm.update(((RequestBodyWithDragon) requestBody).getDragon(), id))
+        if (!collectionManager.update(((RequestBodyWithDragon) requestBody).getDragon(), id))
             throw new InvalidRequestException("Unsuccessfully!");
         return ResponseFactory.createResponse("Successfully updated!");
     }
 
     @Override
-    public Request toRequest(String[] args) {
-        if (args.length > 0 && args[0].chars().allMatch(Character::isDigit))
+    public Request toRequest(String[] args) throws ManagingException {
+        if (args.length >= MIN_ARGS_SIZE && args[FIRST_ARG].chars().allMatch(Character::isDigit))
             return RequestFactory.createRequestWithDragon(getName(), args, io);
         throw new InvalidCommandArgumentException();
     }

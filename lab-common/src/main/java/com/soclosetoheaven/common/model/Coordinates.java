@@ -23,7 +23,7 @@ public class Coordinates  implements Serializable {
     /**
      * creates object and validate its fields via {@link #VALIDATOR#validate()}
      * @param startX can't be null
-     * @param startY can't be greater than 36
+     * @param startY can't be greater than {@link #VALIDATOR#Y_MAX_VALUE}
      */
 
     public Coordinates(Integer startX, double startY) {
@@ -56,6 +56,8 @@ public class Coordinates  implements Serializable {
     public static class Validator implements AbstractValidator<Coordinates> {
         @Serial
         private static final long serialVersionUID = -55221488786L;
+
+        private static final double Y_MAX_VALUE = 36.0;
         @Override
         public void validate(Coordinates cords) {
             validateX(cords.x);
@@ -77,7 +79,7 @@ public class Coordinates  implements Serializable {
          * @throws InvalidFieldValueException if value is invalid
          */
         public void validateY(double y) {
-            if (y >= 36.0)
+            if (y >= Y_MAX_VALUE)
                 throw new InvalidFieldValueException("Field Y can't be greater than 36");
         }
     }

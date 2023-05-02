@@ -13,7 +13,7 @@ public class LRUCache<T> {
     /**
      * inner collection of elements
      */
-    private ArrayList<T> array = new ArrayList<>();
+    private final ArrayList<T> array = new ArrayList<>();
 
     private final int maxSize;
 
@@ -43,7 +43,7 @@ public class LRUCache<T> {
      * clears collection
      */
     public void clear() {
-        this.array = new ArrayList<>();
+        array.clear();
     }
 
     @Override
@@ -61,5 +61,9 @@ public class LRUCache<T> {
      */
     public int size() {
         return this.array.size();
+    }
+
+    public int getMaxSize() {
+        return this.maxSize;
     }
 }

@@ -4,6 +4,7 @@ import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
 import com.soclosetoheaven.common.exceptions.InvalidAccessException;
 import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
 import com.soclosetoheaven.common.exceptions.InvalidRequestException;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.net.auth.UserManager;
 import com.soclosetoheaven.common.net.factory.ResponseFactory;
 import com.soclosetoheaven.common.net.messaging.Request;
@@ -14,23 +15,27 @@ import com.soclosetoheaven.common.net.messaging.Response;
 public class RemoveAllByAgeCommand extends AbstractCommand{
     private final DragonCollectionManager cm;
 
-    private final UserManager um;
-    public RemoveAllByAgeCommand(DragonCollectionManager cm, UserManager um) {
+    private final UserManager userManager;
+    public RemoveAllByAgeCommand(DragonCollectionManager collectionManager, UserManager userManager) {
         super("remove_all_by_age");
-        this.cm = cm;
-        this.um = um;
+        this.cm = collectionManager;
+        this.userManager = userManager;
+    }
+
+    public RemoveAllByAgeCommand() {
+        this(null,null);
     }
 
     @Override
     public Response execute(RequestBody requestBody) throws InvalidRequestException{
         String[] args = requestBody.getArgs();
-        if (args.length < 1 || !args[0].chars().allMatch(Character::isDigit)) {
+        if (args.length < MIN_ARGS_SIZE || !args[FIRST_ARG].chars().allMatch(Character::isDigit)) {
             throw new InvalidRequestException();
         }
 
-        if (!um.getUserByAuthCredentials(requestBody.getAuthCredentials()).isAdmin())
+        if (!userManager.getUserByAuthCredentials(requestBody.getAuthCredentials()).isAdmin())
             throw new InvalidAccessException();
-        long age = Long.parseLong(args[0]);
+        long age = Long.parseLong(args[FIRST_ARG]);
         if (cm.removeAllByAge(age))
             return ResponseFactory.createResponse("%s: %s"
                     .formatted("Removed elements with age", age)
@@ -39,8 +44,8 @@ public class RemoveAllByAgeCommand extends AbstractCommand{
     }
 
     @Override
-    public Request toRequest(String[] args) {
-        if (args.length > 0 && args[0].chars().allMatch(Character::isDigit))
+    public Request toRequest(String[] args) throws ManagingException {
+        if (args.length >= MIN_ARGS_SIZE && args[FIRST_ARG].chars().allMatch(Character::isDigit))
             return super.toRequest(args);
         throw new InvalidCommandArgumentException();
     }

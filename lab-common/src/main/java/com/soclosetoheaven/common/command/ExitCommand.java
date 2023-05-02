@@ -26,7 +26,6 @@ public class ExitCommand extends AbstractCommand{
                 TerminalColors.CYAN)
         );
         System.exit(0);
-        //this command doesn't send anything to server
         return null;
     }
 

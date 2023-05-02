@@ -1,7 +1,6 @@
 package com.soclosetoheaven.server.net.connection;
 
 import com.soclosetoheaven.common.net.connections.SimpleConnection;
-import com.soclosetoheaven.common.net.messaging.Response;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -9,27 +8,26 @@ import java.io.*;
 import java.net.*;
 
 
-public class UDPServerConnection implements SimpleConnection<Pair<SocketAddress, byte[]>, Pair<SocketAddress, Response>> {
+public class UDPServerConnection implements SimpleConnection<Pair<SocketAddress, byte[]>, Pair<SocketAddress, byte[]>> {
     private final DatagramSocket socket;
 
-    private byte[] buffer = new byte[BUFFER_SIZE];
     public UDPServerConnection(int port) throws SocketException{
         this.socket = new DatagramSocket(port);
     }
 
     @Override
     public Pair<SocketAddress, byte[]> waitAndGetData() throws IOException {
-        buffer = new byte[BUFFER_SIZE];
+        byte[] buffer = new byte[BUFFER_SIZE];
         DatagramPacket packet = new DatagramPacket(buffer, BUFFER_SIZE);
         socket.receive(packet);
         return new ImmutablePair<>(packet.getSocketAddress(), buffer);
     }
 
     @Override
-    public void sendData(Pair<SocketAddress, Response> pair) throws IOException {
+    public void sendData(Pair<SocketAddress, byte[]> pair) throws IOException {
         SocketAddress client = pair.getLeft();
-        Response response = pair.getRight();
-        byte[][] packages = transformDataToPackages(response);
+        byte[] data = pair.getRight();
+        byte[][] packages = transformDataToPackages(data);
         synchronized (this) {
             for (byte[] pack : packages) {
                 socket.send(new DatagramPacket(

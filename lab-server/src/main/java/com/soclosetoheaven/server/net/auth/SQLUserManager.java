@@ -1,6 +1,7 @@
 package com.soclosetoheaven.server.net.auth;
 
 import com.soclosetoheaven.common.exceptions.InvalidRequestException;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.net.auth.User;
 import com.soclosetoheaven.common.net.auth.UserManager;
 import com.soclosetoheaven.common.exceptions.InvalidAuthCredentialsException;
@@ -11,7 +12,6 @@ import com.soclosetoheaven.common.net.messaging.Response;
 import com.soclosetoheaven.server.dao.SQLUserDAO;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,7 +29,7 @@ public class SQLUserManager implements UserManager {
     }
 
     @Override
-    public Response login(RequestBody requestBody) throws InvalidAuthCredentialsException {
+    public Response login(RequestBody requestBody) throws ManagingException {
         AuthCredentials authCredentials = requestBody.getAuthCredentials();
         User loggedUser = collection
                 .stream()
@@ -45,30 +45,25 @@ public class SQLUserManager implements UserManager {
     }
 
     @Override
-    public Response register(RequestBody requestBody) throws InvalidRequestException {
+    public Response register(RequestBody requestBody) throws ManagingException {
         AuthCredentials authCredentials = requestBody.getAuthCredentials();
         String[] args = requestBody.getArgs();
         if (args.length < 1)
             throw new InvalidRequestException();
-        String name = args[0];
+        String name = args[FIRST_ARG];
         if (collection
                 .stream()
-                .anyMatch(elem -> elem.getAuthCredentials()
-                        .getLogin()
-                        .equals(authCredentials.getLogin()) ||
-                        elem.getName().equals(name)
-        ))
-            throw new InvalidAuthCredentialsException(); // add comment later
-        // сделать проверку на корректность имени
+                .map(User::getAuthCredentials)
+                .map(AuthCredentials::getLogin)
+                .anyMatch(elem -> elem.equals(authCredentials.getLogin()))
+        )
+            throw new InvalidAuthCredentialsException("This login is already taken, try a new one!");
         User user = new User(name, authCredentials);
-        try {
-            int id = dao.create(user);
-            user.setID(id);
-            collection.add(user);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new InvalidRequestException("Failed to register! May be a server-side trouble!");
-        }
+        int id = dao.create(user);
+        if (id == SQLUserDAO.ERROR_CODE)
+            throw new ManagingException("Error occurred while registering user, try again later!");
+        user.setID(id);
+        collection.add(user);
         return ResponseFactory.createResponse("Successfully registered");
     }
 

@@ -8,7 +8,6 @@ import com.soclosetoheaven.common.util.TerminalColors;
 public class DragonCaveFactory {
 
     private DragonCaveFactory() {
-        throw new UnsupportedOperationException("This is an utility class and can not be instantiated");
     }
 
     public static DragonCave createDragonCave(BasicIO io) {

@@ -1,7 +1,7 @@
 package com.soclosetoheaven.server;
 
 
-import com.soclosetoheaven.common.exceptions.InvalidRequestException;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.net.auth.UserManager;
 import com.soclosetoheaven.common.net.factory.ResponseFactory;
 import com.soclosetoheaven.server.dao.JDBCDragonDAO;
@@ -29,27 +29,31 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.sql.SQLException;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
+import static com.soclosetoheaven.common.net.connections.SimpleConnection.LAST_PACKET_TOKEN;
+
 
 public class ServerInstance{
 
+    private static final int PORT = 34684;
+
+
     private final UDPServerConnection connection;
 
-    private DragonCollectionManager cm;
+    private DragonCollectionManager collectionManager;
 
-    private UserManager um;
+    private UserManager userManager;
 
     private final BasicIO io;
 
-    private final Lock loggerLock = new ReentrantLock();
+    private final Lock serializationLock = new ReentrantLock();
 
 
     private final ExecutorService executor = Executors.newCachedThreadPool();
@@ -57,108 +61,122 @@ public class ServerInstance{
     private final Map<SocketAddress, ClientHandler> clients = new HashMap<>();
 
     public ServerInstance(BasicIO io) throws SocketException {
-        connection = new UDPServerConnection(34684);
-        //this.filePath = filePath;
+        connection = new UDPServerConnection(PORT);
         this.io = io;
     }
 
-    public void run() {
+    public void launch() {
         try {
             SQLDragonDAO dragonDAO = new JDBCDragonDAO(initializeSQLConnection());
             SQLUserDAO userDAO = new JDBCUserDAO(initializeSQLConnection());
-            this.um = new SynchronizedSQLUserManager(userDAO); // NOT NULL!!!!
-            cm = new SynchronizedSQLCollectionManager(dragonDAO);
-        } catch (Exception e) {
-            ServerApp.LOGGER.severe("%s - server shutdown".formatted(e.getMessage()));
-            System.exit(-1);
+            this.userManager = new SynchronizedSQLUserManager(userDAO);
+            collectionManager = new SynchronizedSQLCollectionManager(dragonDAO);
+        } catch (SQLException | IOException e) {
+            ServerApp.log(Level.SEVERE, "%s - server shutdown".formatted(e.getMessage()));
+            return;
         }
-        ServerApp.LOGGER.info(cm.toString());
-        while (ServerApp.getState()) {
-            try {
-                Pair<SocketAddress, byte[]> pair = connection.waitAndGetData();
-                SocketAddress client = pair.getLeft();
-                byte[] packet = pair.getRight();
-                clients.putIfAbsent(client, new ClientHandler(client));
-                ClientHandler handler = clients.get(client).put(packet);
-                // в отдельной синхронизации нет смысла, тк метод receive у datagramsocket'a работает в блокирующем режиме
-                io.writeln("GOT PACKAGE FROM CLIENT - %s - SIZE: %s".formatted(
-                    client.toString(),
-                    packet.length
-                    )
-                ); // не хочу логировать каждый пакет
-                if (packet[connection.MAX_PACKET_SIZE] == 0) {
-                    loggerLock.lock();
-                    ServerApp.LOGGER.log(Level.INFO, "HANDLING REQUEST FROM CLIENT: " + client);
-                    loggerLock.unlock();
-                    executor.execute(handler::handle);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        ServerApp.log(Level.INFO, collectionManager.toString());
+        Thread dataReceiver = new Thread(new ConnectionHandler());
+        dataReceiver.start();
     }
 
-    private class ClientHandler {
+    private class ClientHandler{
 
         private final SocketAddress client;
 
-        private final ArrayList<byte[]> buffers = new ArrayList<>();
+        private final LinkedList<byte[]> buffers = new LinkedList<>();
+
+        private Response response;
+
+        private final Thread thread;
 
         ClientHandler(SocketAddress client) {
             this.client = client;
+            this.thread = new Thread(this::handle);
+            thread.start();
         }
 
 
-        void handle() {
-            try {
-                byte[] data;
-                synchronized (buffers) {
+        synchronized void handle(){
+            while(ServerApp.getState())
+                try {
+                    if (buffers.isEmpty() ||
+                            buffers.getLast()[connection.MAX_PACKET_SIZE] != LAST_PACKET_TOKEN) {
+                        wait();
+                        continue;
+                    }
+                    ServerApp.log(Level.INFO, "HANDLING REQUEST FROM CLIENT:" + client.toString());
+                    byte[] data;
                     data = connection.transformPackagesToData(buffers);
                     buffers.clear();
-                }
-                Request request;
-                synchronized (SerializationUtils.class) {
+                    Request request;
+                    serializationLock.lock();
                     request = SerializationUtils.deserialize(data);
-                }
-                Response response;
+                    serializationLock.unlock();
+                    Response response;
 
-                ServerCommandManager taskCommandManager;
-                if (um.checkIfAuthorized(request.getAuthCredentials()))
-                    taskCommandManager = ServerCommandManager.defaultManager(cm, um);
-                else
-                    taskCommandManager = ServerCommandManager.authManager(um);
-                try {
-                    response = taskCommandManager.manage(request);
-                } catch (InvalidRequestException e) {
-                    response = ResponseFactory.createResponseWithException(e);
+                    ServerCommandManager taskCommandManager;
+                    if (userManager.checkIfAuthorized(request.getAuthCredentials()))
+                        taskCommandManager = ServerCommandManager.defaultManager(collectionManager, userManager);
+                    else
+                        taskCommandManager = ServerCommandManager.authManager(userManager);
+                    try {
+                        response = taskCommandManager.manage(request);
+                    } catch (ManagingException e) {
+                        response = ResponseFactory.createResponseWithException(e);
+                    }
+                    this.response = response;
+                    executor.execute(this::sendResponse);
+                } catch (SerializationException | InterruptedException e) {
+                    ServerApp.log(Level.SEVERE, e.getMessage());
                 }
+        }
+
+        synchronized void put(byte[] buf) {
+            buffers.add(buf);
+            if (buf[connection.MAX_PACKET_SIZE] == LAST_PACKET_TOKEN)
+                notify();
+        }
+
+        public void sendResponse() {
+            try {
+                serializationLock.lock();
+                byte[] serializedResponse = SerializationUtils.serialize(response);
+                serializationLock.unlock();
                 connection.sendData(new ImmutablePair<>(
-                                client,
-                                response
-                        )
+                            client,
+                            serializedResponse
+                    )
                 );
-            } catch (IOException | SerializationException e) {
-                loggerLock.lock();
-                ServerApp.LOGGER.severe(e.getMessage());
-                loggerLock.unlock();
+            } catch (IOException e) {
+                ServerApp.log(Level.SEVERE, e.getMessage());
             }
         }
+    }
 
-        synchronized ClientHandler put(byte[] buf) {
-            buffers.add(buf);
-            return this;
+
+    private class ConnectionHandler implements Runnable{
+        public void run() {
+            while (ServerApp.getState()) {
+                try {
+                    Pair<SocketAddress, byte[]> pair = connection.waitAndGetData();
+                    SocketAddress client = pair.getLeft();
+                    byte[] packet = pair.getRight();
+                    if (!clients.containsKey(client))
+                        clients.put(client, new ClientHandler(client));
+                    clients.get(client).put(packet);
+                } catch (IOException e) {
+                    ServerApp.log(Level.SEVERE, e.getMessage());
+                }
+            }
         }
     }
-    private static Connection initializeSQLConnection() {
+    private static Connection initializeSQLConnection() throws IOException, SQLException{
         try (BufferedReader stream = new BufferedReader(new FileReader(System.getenv("DB_CONFIG")))) {
             String driver = stream.readLine();
             String user = stream.readLine();
             String password = stream.readLine();
             return DriverManager.getConnection(driver, user, password);
-        } catch (Exception e) {
-            ServerApp.LOGGER.severe("%s - %s".formatted(e.getMessage(), "stopping server"));
-            System.exit(-1);
         }
-        return null;
     }
 }

@@ -17,7 +17,6 @@ public class PasswordHasher {
     private final static int TIMES_HASHING = 5;
 
     private PasswordHasher() {
-        throw new UnsupportedOperationException("This is utility class and can't be intensified");
     }
 
     public static char[] hashMD2(char[] password) {

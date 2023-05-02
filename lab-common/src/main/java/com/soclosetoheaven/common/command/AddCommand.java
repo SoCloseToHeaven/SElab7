@@ -11,16 +11,24 @@ import com.soclosetoheaven.common.net.messaging.*;
 
 public class AddCommand extends AbstractCommand{
 
-    private final DragonCollectionManager cm;
+    private final DragonCollectionManager collectionManager;
 
     private final BasicIO io;
-    private final UserManager um;
+    private final UserManager userManager;
 
-    public AddCommand(DragonCollectionManager cm, BasicIO io, UserManager um) {
+    public AddCommand(DragonCollectionManager collectionManager, BasicIO io, UserManager userManager) {
         super("add");
-        this.cm = cm;
+        this.collectionManager = collectionManager;
         this.io = io;
-        this.um = um;
+        this.userManager = userManager;
+    }
+
+    public AddCommand(BasicIO io) {
+        this(null, io, null);
+    }
+
+    public AddCommand(DragonCollectionManager collectionManager, UserManager userManager) {
+        this(collectionManager,null, userManager);
     }
 
     @Override
@@ -28,8 +36,8 @@ public class AddCommand extends AbstractCommand{
         if (!(requestBody instanceof RequestBodyWithDragon))
             throw new InvalidRequestException();
         Dragon dragon = ((RequestBodyWithDragon) requestBody).getDragon();
-        dragon.setCreatorId(um.getUserByAuthCredentials(requestBody.getAuthCredentials()).getID());
-        if (!cm.add(dragon))
+        dragon.setCreatorId(userManager.getUserByAuthCredentials(requestBody.getAuthCredentials()).getID());
+        if (!collectionManager.add(dragon))
             throw new InvalidRequestException("Unsuccessfully!");
         return ResponseFactory.createResponse("Successfully added");
     }

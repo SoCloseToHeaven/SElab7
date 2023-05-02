@@ -1,6 +1,7 @@
 package com.soclosetoheaven.common.commandmanagers;
 
 import com.soclosetoheaven.common.command.*;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.exceptions.UnknownCommandException;
 import com.soclosetoheaven.common.io.BasicIO;
 import com.soclosetoheaven.common.net.messaging.Request;
@@ -17,17 +18,18 @@ public class ClientCommandManager implements CommandManager<Request, String> {
     private final LRUCache<AbstractCommand> history;
     private final HashMap<String, AbstractCommand> commands;
 
+    private static final int ARGS_START_POSITION = 1;
+
     public ClientCommandManager() {
         commands = new HashMap<>();
         history = new LRUCache<>(MAX_HISTORY_SIZE);
     }
 
     @Override
-    public Request manage(String t) throws UnknownCommandException{
-        String[] args = t.trim().split("\\s+");
-        String commandName = args[0].toLowerCase();
-        int commandArgumentsStartPosition = 1;
-        args = Arrays.copyOfRange(args, commandArgumentsStartPosition, args.length);
+    public Request manage(String inputLine) throws ManagingException {
+        String[] args = inputLine.trim().split("\\s+");
+        String commandName = args[AbstractCommand.FIRST_ARG].toLowerCase();
+        args = Arrays.copyOfRange(args, ARGS_START_POSITION, args.length);
         AbstractCommand command;
         if ((command = commands.get(commandName)) == null)
             throw new UnknownCommandException(commandName);
@@ -48,28 +50,28 @@ public class ClientCommandManager implements CommandManager<Request, String> {
 
 
     public static ClientCommandManager defaultManager(BasicIO io) {
-        ClientCommandManager cm = new ClientCommandManager(); // add commands later
+        ClientCommandManager commandManager = new ClientCommandManager();
         Arrays.asList(
-                new LoginCommand(null, io),
-                new RegisterCommand(null, io),
-                new InfoCommand(null),
-                new AddCommand(null, io, null),
-                new SortCommand(null),
-                new RemoveAllByAgeCommand(null, null),
-                new ShowCommand(null),
-                new ShowCommand(null),
-                new CountLessThanAgeCommand(null),
-                new ClearCommand(null, null),
-                new RemoveByIDCommand(null, null),
-                new RemoveAtCommand(null, null),
-                new HelpCommand(null),
-                new GroupCountingByCreationDateCommand(null),
-                new UpdateCommand(null, io, null),
+                new LoginCommand(io),
+                new RegisterCommand(io),
+                new InfoCommand(),
+                new AddCommand(io),
+                new SortCommand(),
+                new RemoveAllByAgeCommand(),
+                new ShowCommand(),
+                new ShowCommand(),
+                new CountLessThanAgeCommand(),
+                new ClearCommand(),
+                new RemoveByIDCommand(),
+                new RemoveAtCommand(),
+                new HelpCommand(),
+                new GroupCountingByCreationDateCommand(),
+                new UpdateCommand(io),
                 new ExitCommand(io),
                 new ExecuteScriptCommand(io),
-                new HistoryCommand(cm, io)
-                ).forEach(cm::addCommand);
-        return cm;
+                new HistoryCommand(commandManager, io)
+                ).forEach(commandManager::addCommand);
+        return commandManager;
     }
 
     public LRUCache<AbstractCommand> getHistory() {

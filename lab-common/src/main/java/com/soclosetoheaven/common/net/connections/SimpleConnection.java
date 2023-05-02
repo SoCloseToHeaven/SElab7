@@ -4,14 +4,15 @@ import org.apache.commons.lang3.SerializationUtils;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public interface SimpleConnection<getT, sendT> {
-    int CONNECTION_TIMEOUT = 5_000; // 5 seconds
-    int BUFFER_SIZE = 8192; // public static final
-    int MAX_PACKET_SIZE = BUFFER_SIZE - 1; // public static final
+    int CONNECTION_TIMEOUT = 5_000;
+    int BUFFER_SIZE = 8192;
+    int MAX_PACKET_SIZE = BUFFER_SIZE - 1;
+
+    int LAST_PACKET_TOKEN = 0;
 
     getT waitAndGetData() throws IOException;
 
@@ -19,6 +20,10 @@ public interface SimpleConnection<getT, sendT> {
 
     default byte[][] transformDataToPackages(Serializable obj) {
         byte[] data = SerializationUtils.serialize(obj);
+        return transformDataToPackages(data);
+    }
+
+    default byte[][] transformDataToPackages(byte[] data) {
         byte[][] packets = new byte[(int) Math.ceil(data.length / (double) BUFFER_SIZE)][BUFFER_SIZE];
 
         int currentPosition = 0;

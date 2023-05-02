@@ -2,8 +2,8 @@ package com.soclosetoheaven.common.command;
 
 import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
 import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
-import com.soclosetoheaven.common.exceptions.InvalidFieldValueException;
 import com.soclosetoheaven.common.exceptions.InvalidRequestException;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.net.factory.ResponseFactory;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
@@ -12,28 +12,31 @@ import com.soclosetoheaven.common.net.messaging.Response;
 
 public class CountLessThanAgeCommand extends AbstractCommand {
 
-    private final DragonCollectionManager cm;
-    public CountLessThanAgeCommand(DragonCollectionManager cm) {
+    private final DragonCollectionManager collectionManager;
+    public CountLessThanAgeCommand(DragonCollectionManager collectionManager) {
         super("count_less_than_age");
-        this.cm = cm;
+        this.collectionManager = collectionManager;
     }
 
+    public CountLessThanAgeCommand() {
+        this(null);
+    }
 
     @Override
     public Response execute(RequestBody requestBody)  throws InvalidRequestException {
         String[] args = requestBody.getArgs();
-        if (args.length < 1 || !args[0].chars().allMatch(Character::isDigit))
+        if (args.length < MIN_ARGS_SIZE || !args[FIRST_ARG].chars().allMatch(Character::isDigit))
             throw new InvalidRequestException();
-        Long age = Long.parseLong(requestBody.getArgs()[0]);
-        Long count = cm.getCollection().stream().filter(elem -> elem.getAge() < age).count();
+        Long age = Long.parseLong(requestBody.getArgs()[FIRST_ARG]);
+        Long count = collectionManager.getCollection().stream().filter(elem -> elem.getAge() < age).count();
         return ResponseFactory.createResponse("%s - %s: %s"
                 .formatted(count, "elements less than age", age)
         );
     }
 
     @Override
-    public Request toRequest(String[] args) {
-        if (args.length > 0 && args[0].chars().allMatch(Character::isDigit))
+    public Request toRequest(String[] args) throws ManagingException {
+        if (args.length > MIN_ARGS_SIZE && args[FIRST_ARG].chars().allMatch(Character::isDigit))
             return super.toRequest(args);
         throw new InvalidCommandArgumentException();
     }

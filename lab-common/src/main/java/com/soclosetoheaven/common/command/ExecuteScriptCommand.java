@@ -2,6 +2,7 @@ package com.soclosetoheaven.common.command;
 
 import com.soclosetoheaven.common.exceptions.ExecutingScriptException;
 import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.io.BasicIO;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
@@ -32,10 +33,10 @@ public class ExecuteScriptCommand extends AbstractCommand{
     }
 
     @Override
-    public Request toRequest(String[] args) {
-        if (args.length < 1)
+    public Request toRequest(String[] args) throws ManagingException {
+        if (args.length < MIN_ARGS_SIZE)
             throw new InvalidCommandArgumentException();
-        Path file = Path.of(args[0]);
+        Path file = Path.of(args[FIRST_ARG]);
         if (OPENED_FILES.contains(file.toFile()))
             throw new ExecutingScriptException("Recursion alert, script execution canceled");
         try {
@@ -52,7 +53,6 @@ public class ExecuteScriptCommand extends AbstractCommand{
             e.printStackTrace();
             throw new ExecutingScriptException(e.getMessage());
         }
-        //this command doesn't send anything to server
         return null;
     }
 

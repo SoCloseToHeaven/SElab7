@@ -1,15 +1,38 @@
 package com.soclosetoheaven.server.dao;
 
-import com.soclosetoheaven.common.util.Savable;
 
 import java.util.List;
 
 public interface DAO<T> {
-    int create(T t) throws Exception;
+
+    /**
+     *
+     * @param t object
+     * @return error code if some error occurred
+     */
+    int create(T t);
+
+    /**
+     *
+     * @return list of objects
+     * @throws Exception if
+     */
     List<T> readAll() throws Exception;
 
-    void update(T t) throws Exception;
+    /**
+     *
+     * @param t object
+     * @return error code if some error occurred
+     */
+    int update(T t);
 
-    void delete(T t) throws Exception;
+    /**
+     *
+     * @param t object
+     * @return error code if some error occurred
+     */
+    int delete(T t);
+
+
 
 }

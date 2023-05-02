@@ -16,7 +16,7 @@ public class Dragon implements Serializable, Comparable<Dragon> {
      */
     @Serial
     private static final long serialVersionUID = -361223588786L;
-    public static final Validator VALIDATOR = new Validator();
+    public static final Validator Validator = new Validator();
 
 
     private int id;
@@ -56,7 +56,7 @@ public class Dragon implements Serializable, Comparable<Dragon> {
         this.wingspan = wingspan;
         this.type = type;
         this.cave = cave;
-        VALIDATOR.validate(this);
+        Validator.validate(this);
     }
 
     public Dragon(int id,
@@ -88,7 +88,7 @@ public class Dragon implements Serializable, Comparable<Dragon> {
     public String getName() {return this.name;}
 
     public Dragon setName(String name) {
-        VALIDATOR.validateName(name);
+        Validator.validateName(name);
         this.name = name;
         return this;
     }
@@ -111,7 +111,7 @@ public class Dragon implements Serializable, Comparable<Dragon> {
     public Long getAge() {return this.age;}
 
     public Dragon setAge(Long age) {
-        VALIDATOR.validateAge(age);
+        Validator.validateAge(age);
         this.age = age;
         return this;
     }
@@ -126,7 +126,7 @@ public class Dragon implements Serializable, Comparable<Dragon> {
     public Integer getWingspan() {return this.wingspan;}
 
     public Dragon setWingspan(Integer wingspan) {
-        VALIDATOR.validateWingspan(wingspan);
+        Validator.validateWingspan(wingspan);
         this.wingspan = wingspan;
         return this;
     }
@@ -188,8 +188,9 @@ public class Dragon implements Serializable, Comparable<Dragon> {
                         String.valueOf(getCoordinates()));
     }
 
-    public void setID(int id) {
+    public Dragon setID(int id) {
         this.id = id;
+        return this;
     }
 
 
@@ -202,11 +203,14 @@ public class Dragon implements Serializable, Comparable<Dragon> {
         /**
          * collection to cache usedIDs
          */
+
+        private static final int WINGSPAN_MIN_VALUE = 0;
+
+        private static final long AGE_MIN_VALUE = 0;
         @Serial
         private static final long serialVersionUID = -5519361186L;
         @Override
         public void validate(Dragon dragon) {
-            //validateID(dragon.id);
             validateName(dragon.name);
             validateCoordinates(dragon.coordinates);
             validateCreationDate(dragon.creationDate);
@@ -253,8 +257,10 @@ public class Dragon implements Serializable, Comparable<Dragon> {
          * @throws InvalidFieldValueException if value is invalid
          */
         public void validateAge(Long age) {
-            if (age == null) return;
-            if (age <= 0) throw new InvalidFieldValueException("Age can't be lower than zero!");
+            if (age == null)
+                return;
+            if (age <= AGE_MIN_VALUE)
+                throw new InvalidFieldValueException("Age can't be lower than zero!");
         }
 
         /**
@@ -273,7 +279,7 @@ public class Dragon implements Serializable, Comparable<Dragon> {
          */
         public void validateWingspan(Integer wingspan) {
             AbstractValidator.checkIfNull(wingspan, "Wingspan can't be null!");
-            if (wingspan <= 0)
+            if (wingspan <= WINGSPAN_MIN_VALUE)
                 throw new InvalidFieldValueException("Wingspan value can't be lower than zero!");
         }
 

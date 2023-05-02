@@ -3,10 +3,12 @@ package com.soclosetoheaven.common.commandmanagers;
 import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
 import com.soclosetoheaven.common.command.*;
 
-import com.soclosetoheaven.common.exceptions.InvalidRequestException;
+import com.soclosetoheaven.common.exceptions.ManagingException;
+import com.soclosetoheaven.common.exceptions.UnknownCommandException;
 import com.soclosetoheaven.common.net.auth.UserManager;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.Response;
+import com.soclosetoheaven.common.util.LRUCache;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,17 +16,22 @@ import java.util.Map;
 
 public class ServerCommandManager implements CommandManager<Response, Request>{
 
+    private static final int MAX_HISTORY_SIZE = 13;
+
+    private final LRUCache<AbstractCommand> history;
+
     private final Map<String, AbstractCommand> commands;
 
     public ServerCommandManager() {
         commands = new HashMap<>();
+        history = new LRUCache<>(MAX_HISTORY_SIZE);
     }
 
     @Override
-    public Response manage(Request request) throws InvalidRequestException {
+    public Response manage(Request request) throws ManagingException {
         AbstractCommand command =  commands.get(request.getCommandName());
         if (command == null)
-            throw new InvalidRequestException("Unable to execute command!");
+            throw new UnknownCommandException("Unable to execute command!");
         return command.execute(request.getRequestBody());
     }
 
@@ -38,33 +45,42 @@ public class ServerCommandManager implements CommandManager<Response, Request>{
         return commands;
     }
 
-    public synchronized static ServerCommandManager defaultManager(DragonCollectionManager cm, UserManager um) {
-        ServerCommandManager scm = new ServerCommandManager(); // add commands later
+    public synchronized static ServerCommandManager defaultManager(DragonCollectionManager collectionManager, UserManager userManager) {
+        ServerCommandManager commandManager = new ServerCommandManager();
         Arrays.asList(
-                new HelpCommand(scm),
-                new InfoCommand(cm),
-                new AddCommand(cm, null, um),
-                new SortCommand(cm),
-                new RemoveAllByAgeCommand(cm, um),
-                new ShowCommand(cm),
-                new SortCommand(cm),
-                new CountLessThanAgeCommand(cm),
-                new ClearCommand(cm, um),
-                new RemoveByIDCommand(cm, um),
-                new RemoveAtCommand(cm, um),
-                new GroupCountingByCreationDateCommand(cm),
-                new UpdateCommand(cm, null, um),
-                new LoginCommand(um, null),
-                new RegisterCommand(um, null)
-        ).forEach(scm::addCommand);
-        return scm;
+                new HelpCommand(commandManager),
+                new InfoCommand(collectionManager),
+                new AddCommand(collectionManager, userManager),
+                new SortCommand(collectionManager),
+                new RemoveAllByAgeCommand(collectionManager, userManager),
+                new ShowCommand(collectionManager),
+                new SortCommand(collectionManager),
+                new CountLessThanAgeCommand(collectionManager),
+                new ClearCommand(collectionManager, userManager),
+                new RemoveByIDCommand(collectionManager, userManager),
+                new RemoveAtCommand(collectionManager, userManager),
+                new GroupCountingByCreationDateCommand(collectionManager),
+                new UpdateCommand(collectionManager,  userManager),
+                new LoginCommand(userManager),
+                new RegisterCommand(userManager)
+        ).forEach(commandManager::addCommand);
+        return commandManager;
     }
 
     public synchronized static ServerCommandManager authManager(UserManager um) {
         ServerCommandManager scm = new ServerCommandManager();
-        scm.addCommand(new LoginCommand(um, null));
-        scm.addCommand(new RegisterCommand(um, null));
+        scm.addCommand(new LoginCommand(um));
+        scm.addCommand(new RegisterCommand(um));
         scm.addCommand(new HelpCommand(scm));
         return scm;
+    }
+
+    public static int getMaxHistorySize() {
+        return MAX_HISTORY_SIZE;
+    }
+
+    @Override
+    public LRUCache<AbstractCommand> getHistory() {
+        return history;
     }
 }

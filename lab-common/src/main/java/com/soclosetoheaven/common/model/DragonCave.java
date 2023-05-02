@@ -24,7 +24,7 @@ public class DragonCave implements Serializable {
     /**
      * creates new object of class and validates it via {@link #VALIDATOR#validate()}
      * @param startDepth value to validate
-     * @param startNumberOfTreasures value have to be greater than zero
+     * @param startNumberOfTreasures value have to be greater than {@link #VALIDATOR#MIN_NUMBER_OF_TREASURES}
      */
 
     public DragonCave(long startDepth, int startNumberOfTreasures) {
@@ -58,6 +58,8 @@ public class DragonCave implements Serializable {
     }
 
     public static class Validator implements AbstractValidator<DragonCave> {
+
+        private static final int MIN_NUMBER_OF_TREASURES = 0;
         @Serial
         private static final long serialVersionUID = -5519361223588786L;
         @Override
@@ -70,7 +72,7 @@ public class DragonCave implements Serializable {
          * @param numberOfTreasures value to validate
          */
         public void validateNumberOfTreasures(int numberOfTreasures)  {
-            if (numberOfTreasures <= 0)
+            if (numberOfTreasures <= MIN_NUMBER_OF_TREASURES)
                 throw new InvalidFieldValueException("Number of treasures can't be lower than zero");
         }
     }

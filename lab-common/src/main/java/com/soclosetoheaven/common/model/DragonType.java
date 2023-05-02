@@ -1,31 +1,36 @@
 package com.soclosetoheaven.common.model;
 
 
+import com.soclosetoheaven.common.exceptions.InvalidFieldValueException;
+
 import java.io.Serial;
 import java.io.Serializable;
 
 public enum DragonType implements Serializable {
-    WATER(1),
+    WATER,
 
-    UNDERGROUND(2),
+    UNDERGROUND,
 
-    AIR(3),
+    AIR,
 
-    FIRE(4);
+    FIRE;
 
-    private final int number;
     @Serial
     private static final long serialVersionUID = -551936780166L;
-    DragonType(int number) {
-        this.number = number;
-    }
+
+
+    private static final String POSITIVE_NUMBER_PATTERN = "[1-9]\\d*";
+
+    private static final int NUMBER_OFFSET = 1;
+
+
     public static DragonType parseDragonType(String line) {
         for (DragonType type : DragonType.values()) {
             if (type.toString().equals(line.toUpperCase()) ||
-                    (line.matches("[1-9]\\d*") && Integer.parseInt(line) == type.number))
+                    (line.matches(POSITIVE_NUMBER_PATTERN) && Integer.parseInt(line) == (type.ordinal() + NUMBER_OFFSET)))
                 return type;
         }
-        throw new UnsupportedOperationException("%s - %s".formatted(line, "can't be converted to DragonType"));
+        return null;
     }
 
     /**

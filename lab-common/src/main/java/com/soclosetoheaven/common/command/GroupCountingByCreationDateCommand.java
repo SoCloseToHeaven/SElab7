@@ -1,5 +1,6 @@
 package com.soclosetoheaven.common.command;
 
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.model.Dragon;
 import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
 import com.soclosetoheaven.common.net.factory.ResponseFactory;
@@ -13,17 +14,21 @@ import java.util.List;
 
 public class GroupCountingByCreationDateCommand extends AbstractCommand{
 
-    private final DragonCollectionManager cm;
+    private final DragonCollectionManager collectionManager;
 
-    public GroupCountingByCreationDateCommand(DragonCollectionManager cm) {
+    public GroupCountingByCreationDateCommand(DragonCollectionManager collectionManager) {
         super("group_counting_by_creation_date");
-        this.cm = cm;
+        this.collectionManager = collectionManager;
+    }
+
+    public GroupCountingByCreationDateCommand() {
+        this(null);
     }
 
     @Override
     public Response execute(RequestBody requestBody) {
         HashMap<Date, Integer> groups = new HashMap<>();
-        List<Dragon> collection = cm.getCollection();
+        List<Dragon> collection = collectionManager.getCollection();
         for (Dragon dragon : collection) {
             Date date = dragon.getCreationDate();
             if (!groups.containsKey(date))
@@ -34,7 +39,7 @@ public class GroupCountingByCreationDateCommand extends AbstractCommand{
     }
 
     @Override
-    public Request toRequest(String[] args) {
+    public Request toRequest(String[] args) throws ManagingException {
         return super.toRequest(null);
     }
 

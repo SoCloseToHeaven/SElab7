@@ -1,7 +1,6 @@
 package com.soclosetoheaven.server.net.auth;
 
-import com.soclosetoheaven.common.exceptions.InvalidAuthCredentialsException;
-import com.soclosetoheaven.common.exceptions.InvalidRequestException;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.net.auth.AuthCredentials;
 import com.soclosetoheaven.common.net.auth.User;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
@@ -22,7 +21,7 @@ public class SynchronizedSQLUserManager extends SQLUserManager{
     }
 
     @Override
-    public Response login(RequestBody requestBody) throws InvalidAuthCredentialsException {
+    public Response login(RequestBody requestBody) throws ManagingException {
         lock.readLock().lock();
         try {
             return super.login(requestBody);
@@ -32,7 +31,7 @@ public class SynchronizedSQLUserManager extends SQLUserManager{
     }
 
     @Override
-    public Response register(RequestBody requestBody) throws InvalidRequestException {
+    public Response register(RequestBody requestBody) throws ManagingException {
         lock.writeLock().lock();
         try {
             return super.register(requestBody);

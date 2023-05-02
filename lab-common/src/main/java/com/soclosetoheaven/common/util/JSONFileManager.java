@@ -53,7 +53,7 @@ public class JSONFileManager {
             ArrayList<Dragon> dragons = parser.parse(this.fileData.toString());
             dragons.removeIf(dragon -> {
                 try {
-                    Dragon.VALIDATOR.validate(dragon);
+                    Dragon.Validator.validate(dragon);
                 } catch (InvalidFieldValueException e) {
                     System.err.printf("Object: %s - can't be added due to invalid field values%n", dragon.toString());
                     return true;

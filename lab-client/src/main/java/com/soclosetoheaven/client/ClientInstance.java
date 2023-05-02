@@ -3,6 +3,7 @@ package com.soclosetoheaven.client;
 import com.soclosetoheaven.common.commandmanagers.ClientCommandManager;
 import com.soclosetoheaven.common.exceptions.ExecutingScriptException;
 import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.exceptions.UnknownCommandException;
 import com.soclosetoheaven.common.io.BasicIO;
 
@@ -15,6 +16,8 @@ import org.apache.commons.lang3.SerializationException;
 
 import java.io.IOException;
 import java.net.PortUnreachableException;
+import java.net.Socket;
+import java.net.SocketAddress;
 
 /**
  * class used for interaction of user with console
@@ -36,21 +39,24 @@ public class ClientInstance {
     private static final String INPUT_PREFIX = TerminalColors.setColor("> ", TerminalColors.CYAN);
 
 
+    private final int port;
 
 
-    public ClientInstance() {
+
+    public ClientInstance(int port) {
         this.io = new BasicIO();
         this.commandManager = ClientCommandManager.defaultManager(io);
+        this.port = port;
     }
 
 
-    public void run() {
+    public void launch() {
         try {
-            connection = new UDPClientConnection("localhost", 34684);
+            connection = new UDPClientConnection("localhost", port);
         } catch (IOException e) {
             io.writeErr(e.getMessage());
             io.writeErr("No option to continue work of client application!");
-            System.exit(-29);
+            return;
         }
         io.writeln(TerminalColors.setColor(
                 "Welcome to client-app, please, login or register, or see possible command by typing 'help'",
@@ -74,9 +80,7 @@ public class ClientInstance {
             } catch (PortUnreachableException e){
                 io.writeErr("UNABLE TO CONNECT TO SERVER!");
             } catch (IOException |
-                     UnknownCommandException |
-                     InvalidCommandArgumentException |
-                     ExecutingScriptException |
+                     ManagingException |
                      SerializationException e) {
                 io.writeErr(e.getMessage());
             }

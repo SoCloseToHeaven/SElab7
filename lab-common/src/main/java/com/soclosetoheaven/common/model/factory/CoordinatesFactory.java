@@ -8,7 +8,6 @@ import com.soclosetoheaven.common.util.TerminalColors;
 public class CoordinatesFactory {
 
     private CoordinatesFactory() {
-        throw new UnsupportedOperationException("This is an utility class and can not be instantiated");
     }
 
     public static Coordinates createCoordinates(BasicIO io) {
@@ -32,7 +31,7 @@ public class CoordinatesFactory {
             double y = Double.parseDouble(io.stdRead("Type coordinate Y: "));
             Coordinates.VALIDATOR.validateY(y);
             return y;
-        } catch (NumberFormatException|InvalidFieldValueException e) {
+        } catch (NumberFormatException | InvalidFieldValueException e) {
             io.writeln(TerminalColors.setColor(e.getMessage(), TerminalColors.RED));
             return inputY(io);
         }

@@ -9,17 +9,21 @@ import com.soclosetoheaven.common.net.messaging.Response;
 
 public class HelpCommand extends AbstractCommand{
 
-    private final CommandManager<?,?> cm;
+    private final CommandManager<?,?> commandManager;
 
-    public HelpCommand(CommandManager<?,?> cm) {
+    public HelpCommand(CommandManager<?,?> commandManager) {
         super("help");
-        this.cm = cm;
+        this.commandManager = commandManager;
+    }
+
+    public HelpCommand() {
+        this(null);
     }
 
     @Override
     public Response execute(RequestBody requestBody) {
         StringBuilder responseText = new StringBuilder();
-        cm.getCommands().forEach((k,v) -> responseText.append("%s%n".formatted(v.getUsage())));
+        commandManager.getCommands().forEach((k, v) -> responseText.append("%s%n".formatted(v.getUsage())));
         return ResponseFactory.createResponse(responseText.toString().trim());
     }
 

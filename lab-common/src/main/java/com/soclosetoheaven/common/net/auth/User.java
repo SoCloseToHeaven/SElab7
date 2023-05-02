@@ -4,6 +4,8 @@ import java.util.*;
 
 public class User {
 
+    public static final String NAME_PATTERN = "[a-zA-Z0-9]{4,30}";
+
     private int id;
 
     private final String name;

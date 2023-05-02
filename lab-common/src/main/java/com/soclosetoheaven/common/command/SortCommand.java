@@ -1,26 +1,31 @@
 package com.soclosetoheaven.common.command;
 
 import com.soclosetoheaven.common.collectionmanagers.DragonCollectionManager;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.net.factory.ResponseFactory;
 import com.soclosetoheaven.common.net.messaging.Request;
 import com.soclosetoheaven.common.net.messaging.RequestBody;
 import com.soclosetoheaven.common.net.messaging.Response;
 
 public class SortCommand extends AbstractCommand{
-    private final DragonCollectionManager cm;
-    public SortCommand(DragonCollectionManager cm) {
+    private final DragonCollectionManager collectionManager;
+    public SortCommand(DragonCollectionManager collectionManager) {
         super("sort");
-        this.cm = cm;
+        this.collectionManager = collectionManager;
+    }
+
+    public SortCommand() {
+        this(null);
     }
 
     @Override
     public Response execute(RequestBody requestBody) {
-        cm.sort();
+        collectionManager.sort();
         return ResponseFactory.createResponse("Collection was sorted in default order");
     }
 
     @Override
-    public Request toRequest(String[] args) {
+    public Request toRequest(String[] args) throws ManagingException {
         return super.toRequest(null);
     }
 

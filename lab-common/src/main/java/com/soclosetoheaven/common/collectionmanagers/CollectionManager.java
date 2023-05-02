@@ -16,7 +16,6 @@ public interface CollectionManager<T> {
 
     List<T> getCollection();
 
-    void setCollection(List<T> collection);
 
     /**
      * adds new element of collection
@@ -32,7 +31,7 @@ public interface CollectionManager<T> {
     /**
      * clears collection
      */
-    void clear();
+    boolean clear();
 
     /**
      * sorts collection

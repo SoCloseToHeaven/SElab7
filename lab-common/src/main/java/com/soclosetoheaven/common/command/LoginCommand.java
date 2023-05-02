@@ -1,8 +1,8 @@
 package com.soclosetoheaven.common.command;
 
 import com.soclosetoheaven.common.exceptions.InvalidAuthCredentialsException;
-import com.soclosetoheaven.common.exceptions.InvalidFieldValueException;
-import com.soclosetoheaven.common.exceptions.InvalidRequestException;
+import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
+import com.soclosetoheaven.common.exceptions.ManagingException;
 import com.soclosetoheaven.common.io.BasicIO;
 import com.soclosetoheaven.common.net.auth.AuthCredentials;
 import com.soclosetoheaven.common.net.auth.UserManager;
@@ -12,36 +12,42 @@ import com.soclosetoheaven.common.net.messaging.Response;
 import com.soclosetoheaven.common.util.PasswordHasher;
 import com.soclosetoheaven.common.util.TerminalColors;
 
-import java.util.regex.Pattern;
-
-import static java.lang.System.console;
+import java.util.stream.IntStream;
 
 public class LoginCommand extends AbstractCommand{
 
-    private final UserManager um;
+    private final UserManager userManager;
 
     private final BasicIO io;
 
-    public LoginCommand(UserManager um, BasicIO io) {
+    public LoginCommand(UserManager userManager, BasicIO io) {
         super("login");
-        this.um = um;
+        this.userManager = userManager;
         this.io = io;
     }
+
+    public LoginCommand(UserManager userManager) {
+        this(userManager, null);
+    }
+
+    public LoginCommand(BasicIO io) {
+        this(null, io);
+    }
+
     @Override
-    public Response execute(RequestBody requestBody) throws InvalidRequestException {
-        return um.login(requestBody);
+    public Response execute(RequestBody requestBody) throws ManagingException {
+        return userManager.login(requestBody);
     }
 
 
 
     @Override
-    public Request toRequest(String[] args) {
+    public Request toRequest(String[] args) throws InvalidAuthCredentialsException {
         Request request = new Request(getName(), new RequestBody(args));
         io.writeln(TerminalColors.setColor("Enter login:", TerminalColors.GREEN));
         String login = System.console().readLine();
         io.writeln(TerminalColors.setColor("Enter password:", TerminalColors.GREEN));
-        char[] password =  System.console().readPassword();
-        // Заменить на System.console().readPassword(), сейчас не так, потому что из-за эмуляции консоли в IDE
+        char[] password = System.console().readPassword();
         request.setAuthCredentials(new AuthCredentials(login, PasswordHasher.hashMD2(password)));
         return request;
     }
