@@ -6,10 +6,6 @@ package com.soclosetoheaven.client;
  */
 public class ClientApp {
 
-    /**
-     * main method, runs ConsoleClient
-     * @param args command-string arguments
-     */
     private final static int FIRST_ARG = 0;
 
     private final static int PORT_LOWER_LIMIT = 1024;

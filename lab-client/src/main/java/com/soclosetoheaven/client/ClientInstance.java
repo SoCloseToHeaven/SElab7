@@ -1,10 +1,8 @@
 package com.soclosetoheaven.client;
 
 import com.soclosetoheaven.common.commandmanagers.ClientCommandManager;
-import com.soclosetoheaven.common.exceptions.ExecutingScriptException;
-import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
 import com.soclosetoheaven.common.exceptions.ManagingException;
-import com.soclosetoheaven.common.exceptions.UnknownCommandException;
+import com.soclosetoheaven.common.exceptions.UnauthorizedException;
 import com.soclosetoheaven.common.io.BasicIO;
 
 import com.soclosetoheaven.client.net.connection.UDPClientConnection;
@@ -16,8 +14,6 @@ import org.apache.commons.lang3.SerializationException;
 
 import java.io.IOException;
 import java.net.PortUnreachableException;
-import java.net.Socket;
-import java.net.SocketAddress;
 
 /**
  * class used for interaction of user with console
@@ -59,7 +55,7 @@ public class ClientInstance {
             return;
         }
         io.writeln(TerminalColors.setColor(
-                "Welcome to client-app, please, login or register, or see possible command by typing 'help'",
+                "Welcome to client-app, please, login or register, or see possible command by typing 'help', or exit program typing 'exit'",
                 TerminalColors.GREEN)
         );
         String input;
@@ -77,6 +73,9 @@ public class ClientInstance {
                 io.writeln(
                         TerminalColors.setColor(response.toString(), TerminalColors.BLUE)
                 );
+            } catch (UnauthorizedException e) {
+                this.authCredentials = null;
+                io.writeErr("Auth credentials cleared");
             } catch (PortUnreachableException e){
                 io.writeErr("UNABLE TO CONNECT TO SERVER!");
             } catch (IOException |

@@ -5,6 +5,7 @@ import com.soclosetoheaven.common.exceptions.InvalidAccessException;
 import com.soclosetoheaven.common.exceptions.InvalidCommandArgumentException;
 import com.soclosetoheaven.common.exceptions.InvalidRequestException;
 import com.soclosetoheaven.common.exceptions.ManagingException;
+import com.soclosetoheaven.common.model.Dragon;
 import com.soclosetoheaven.common.net.auth.User;
 import com.soclosetoheaven.common.net.auth.UserManager;
 import com.soclosetoheaven.common.net.factory.ResponseFactory;
@@ -35,7 +36,10 @@ public class RemoveByIDCommand extends AbstractCommand{
             throw new InvalidRequestException();
         User user = userManager.getUserByAuthCredentials(requestBody.getAuthCredentials());
         int id = Integer.parseInt(args[FIRST_ARG]);
-        if (!user.isAdmin() || collectionManager.getByID(id).getCreatorId() != user.getID())
+        Dragon dragon = collectionManager.getByID(id);
+        if (dragon == null)
+            throw new InvalidRequestException("No such element!");
+        if (!user.isAdmin() && dragon.getCreatorId() != user.getID())
             throw new InvalidAccessException();
         if (!collectionManager.removeByID(id))
             throw new InvalidRequestException("Unsuccessfully!");
@@ -44,7 +48,7 @@ public class RemoveByIDCommand extends AbstractCommand{
 
     @Override
     public Request toRequest(String[] args) throws ManagingException {
-        if (args.length > MIN_ARGS_SIZE && args[FIRST_ARG].chars().allMatch(Character::isDigit))
+        if (args.length >= MIN_ARGS_SIZE && args[FIRST_ARG].chars().allMatch(Character::isDigit))
             return super.toRequest(args);
         throw new InvalidCommandArgumentException();
     }

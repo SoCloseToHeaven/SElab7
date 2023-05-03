@@ -62,7 +62,8 @@ public class ServerCommandManager implements CommandManager<Response, Request>{
                 new GroupCountingByCreationDateCommand(collectionManager),
                 new UpdateCommand(collectionManager,  userManager),
                 new LoginCommand(userManager),
-                new RegisterCommand(userManager)
+                new RegisterCommand(userManager),
+                new LogoutCommand()
         ).forEach(commandManager::addCommand);
         return commandManager;
     }
@@ -72,6 +73,7 @@ public class ServerCommandManager implements CommandManager<Response, Request>{
         scm.addCommand(new LoginCommand(um));
         scm.addCommand(new RegisterCommand(um));
         scm.addCommand(new HelpCommand(scm));
+        scm.addCommand(new LogoutCommand());
         return scm;
     }
 

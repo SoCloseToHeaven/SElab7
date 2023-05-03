@@ -13,6 +13,7 @@ public class AuthCredentials implements Serializable {
 
     public static final String LOGIN_PATTERN = "[a-zA-Z0-9]{4,30}";
 
+
     public static final int MIN_PASSWORD_SIZE = 4;
 
     public static final int MAX_PASSWORD_SIZE = 16;

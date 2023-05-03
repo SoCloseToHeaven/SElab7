@@ -40,7 +40,7 @@ public class RemoveAtCommand extends AbstractCommand {
         Dragon dragon = collectionManager.get(index);
         if (dragon == null)
             throw new InvalidRequestException("No such element!");
-        if (!user.isAdmin() || dragon.getCreatorId() != user.getID())
+        if (!user.isAdmin() && dragon.getCreatorId() != user.getID())
             throw new InvalidAccessException();
         if (collectionManager.remove(index) == null)
             throw new InvalidRequestException("Unsuccessfully!");

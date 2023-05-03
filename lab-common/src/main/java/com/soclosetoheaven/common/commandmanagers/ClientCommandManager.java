@@ -69,7 +69,8 @@ public class ClientCommandManager implements CommandManager<Request, String> {
                 new UpdateCommand(io),
                 new ExitCommand(io),
                 new ExecuteScriptCommand(io),
-                new HistoryCommand(commandManager, io)
+                new HistoryCommand(commandManager, io),
+                new LogoutCommand()
                 ).forEach(commandManager::addCommand);
         return commandManager;
     }

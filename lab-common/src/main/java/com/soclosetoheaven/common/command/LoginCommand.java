@@ -42,12 +42,14 @@ public class LoginCommand extends AbstractCommand{
 
 
     @Override
-    public Request toRequest(String[] args) throws InvalidAuthCredentialsException {
+    public Request toRequest(String[] args) throws InvalidAuthCredentialsException, InvalidCommandArgumentException {
         Request request = new Request(getName(), new RequestBody(args));
         io.writeln(TerminalColors.setColor("Enter login:", TerminalColors.GREEN));
         String login = System.console().readLine();
         io.writeln(TerminalColors.setColor("Enter password:", TerminalColors.GREEN));
         char[] password = System.console().readPassword();
+        if (login == null || password == null)
+            throw new InvalidCommandArgumentException();
         request.setAuthCredentials(new AuthCredentials(login, PasswordHasher.hashMD2(password)));
         return request;
     }

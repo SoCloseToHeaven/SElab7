@@ -36,7 +36,7 @@ public class CountLessThanAgeCommand extends AbstractCommand {
 
     @Override
     public Request toRequest(String[] args) throws ManagingException {
-        if (args.length > MIN_ARGS_SIZE && args[FIRST_ARG].chars().allMatch(Character::isDigit))
+        if (args.length >= MIN_ARGS_SIZE && args[FIRST_ARG].chars().allMatch(Character::isDigit))
             return super.toRequest(args);
         throw new InvalidCommandArgumentException();
     }

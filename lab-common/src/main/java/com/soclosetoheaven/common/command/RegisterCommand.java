@@ -46,6 +46,8 @@ public class RegisterCommand extends AbstractCommand{
             throw new InvalidCommandArgumentException("Username must match pattern: %s".formatted(User.NAME_PATTERN));
         io.writeln(TerminalColors.setColor("Enter login:", TerminalColors.GREEN));
         String login = System.console().readLine();
+        if (login == null)
+            throw new InvalidCommandArgumentException();
         if (!login.matches(AuthCredentials.LOGIN_PATTERN))
             throw new InvalidAuthCredentialsException(
                     "Invalid login: it must be from match pattern: %s"
@@ -53,6 +55,8 @@ public class RegisterCommand extends AbstractCommand{
             );
         io.writeln(TerminalColors.setColor("Enter password:", TerminalColors.GREEN));
         char[] password = System.console().readPassword();
+        if (password == null)
+            throw new InvalidCommandArgumentException();
         if (password.length < AuthCredentials.MIN_PASSWORD_SIZE || password.length > AuthCredentials.MAX_PASSWORD_SIZE)
             throw new InvalidAuthCredentialsException(
                     "Invalid password: it must be from %s to %s size!"
